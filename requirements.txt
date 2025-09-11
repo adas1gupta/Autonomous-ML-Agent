@@ -1,0 +1,4 @@
+daytona
+streamlit
+python-dotenv
+pandas 
