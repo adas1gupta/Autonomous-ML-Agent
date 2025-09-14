@@ -3,6 +3,10 @@ import pandas as pd
 import json 
 from dotenv import load_dotenv
 import io
+import os
+from openai import OpenAI
+
+load_dotenv()
 
 st.title("AutoML Agent")
 st.markdown("Upload a csv file to get started")
@@ -71,8 +75,11 @@ def build_preprocessing_prompt(df):
     - Missing values
     - Duplicate values
     - Outliers
+    - Standardize the data accordingly 
+    - Use one-hot-encoding for categorical variables
 
     Write a python script to clean the data, based on the data summary provided, in a json property called "script".
+    The script should be a python script that can be executed to clean the data. 
     """
     return prompt 
 
@@ -80,7 +87,7 @@ def get_openai_script(prompt: str) -> str:
     try:
         client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         resp = client.chat.completions.create(
-            model=model,
+            model="gpt-5-mini",
             response_format={"type": "json_object"},
             messages=[
                 {
@@ -104,6 +111,11 @@ def get_openai_script(prompt: str) -> str:
             script_val = data.get("script")
             if isinstance(script_val, str) and script_val.strip():
                 return script_val.strip()
+        except Exception as e:
+            pass
+        
+    except Exception as e:
+        return None
 
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
@@ -115,8 +127,12 @@ if uploaded_file is not None:
 
     run_button = st.button("Run AutoML")
 
-    if button: 
+    if run_button: 
         with st.spinner("Running AutoML..."):
-            st.write(df.head())
-            st.write(selected_column)
-    
+            cleaning_prompt = build_preprocessing_prompt(df)
+            with st.expander("Cleaning Prompt"):
+                st.write(cleaning_prompt)
+            script = get_openai_script(cleaning_prompt)
+            with st.expander("Script"):
+                st.code(script)    
+

@@ -2,3 +2,4 @@ daytona
 streamlit
 python-dotenv
 pandas 
+OpenAI
